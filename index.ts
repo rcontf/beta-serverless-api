@@ -4,7 +4,7 @@ import {
   validateRequest,
 } from "https://deno.land/x/sift@0.4.0/mod.ts";
 
-import { Rcon } from "https://deno.land/x/deno_rcon/rcon.ts";
+import { Rcon } from "./rcon.ts";
 
 import { RconRequestDto } from "./types.ts";
 
