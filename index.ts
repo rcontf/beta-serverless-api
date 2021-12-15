@@ -6,15 +6,7 @@ import {
 
 import { Rcon } from "https://deno.land/x/deno_rcon/rcon.ts";
 
-interface RconRequestDto {
-  readonly ip: string;
-
-  readonly password: string;
-
-  readonly command: string;
-
-  readonly port: number;
-}
+import { RconRequestDto } from "./types.ts";
 
 serve({
   "/": home,
