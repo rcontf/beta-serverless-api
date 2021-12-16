@@ -8,6 +8,15 @@ import { Rcon } from "./rcon.ts";
 
 import { RconRequestDto } from "./types.ts";
 
+const getHeaders = () => {
+  const headers = new Headers();
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "POST");
+  headers.set("Access-Control-Allow-Headers", "Content-Type");
+
+  return headers;
+};
+
 serve({
   "/": home,
   404: notFound,
@@ -23,10 +32,7 @@ function notFound() {
 
 async function home(req: Request) {
   if (req.method.toUpperCase() === "OPTIONS") {
-    const headers = new Headers();
-    headers.set("Access-Control-Allow-Origin", "*");
-
-    return new Response("OK", { status: 200, headers });
+    return new Response("OK", { status: 200, headers: getHeaders() });
   }
 
   let body: RconRequestDto;
@@ -40,9 +46,6 @@ async function home(req: Request) {
     throw err;
   }
 
-  const headers = new Headers();
-  headers.set("Access-Control-Allow-Origin", "*");
-
   try {
     const rcon = new Rcon(body.ip, body.port ?? 27015, body.password);
 
@@ -54,7 +57,7 @@ async function home(req: Request) {
         response,
       },
       {
-        headers,
+        headers: getHeaders(),
       }
     );
   } catch (_err) {
@@ -66,7 +69,7 @@ async function home(req: Request) {
         error: "Bad Request",
       },
       {
-        headers,
+        headers: getHeaders(),
       }
     );
   }
