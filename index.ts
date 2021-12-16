@@ -22,6 +22,13 @@ function notFound() {
 }
 
 async function home(req: Request) {
+  if (req.method.toUpperCase() === "OPTIONS") {
+    const headers = new Headers();
+    headers.set("Access-Control-Allow-Origin", "*");
+
+    return new Response("OK", { status: 200, headers });
+  }
+
   let body: RconRequestDto;
   try {
     body = await validateBody(req);
@@ -33,22 +40,35 @@ async function home(req: Request) {
     throw err;
   }
 
+  const headers = new Headers();
+  headers.set("Access-Control-Allow-Origin", "*");
+
   try {
     const rcon = new Rcon(body.ip, body.port ?? 27015, body.password);
 
     const response = await rcon.sendCmd(body.command);
 
-    return json({
-      statusCode: 200,
-      response,
-    });
+    return json(
+      {
+        statusCode: 200,
+        response,
+      },
+      {
+        headers,
+      }
+    );
   } catch (_err) {
     console.log(_err);
-    return json({
-      statusCode: 400,
-      message: "Bad RCON details",
-      error: "Bad Request",
-    });
+    return json(
+      {
+        statusCode: 400,
+        message: "Bad RCON details",
+        error: "Bad Request",
+      },
+      {
+        headers,
+      }
+    );
   }
 }
 
