@@ -23,11 +23,14 @@ serve({
 });
 
 function notFound() {
-  return json({
-    statusCode: 404,
-    message: "Not found",
-    error: "Not Found",
-  });
+  return new Response(
+    JSON.stringify({
+      statusCode: 404,
+      message: "Not found",
+      error: "Not Found",
+    }),
+    { status: 404 }
+  );
 }
 
 async function home(req: Request) {
