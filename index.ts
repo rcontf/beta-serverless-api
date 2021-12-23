@@ -4,7 +4,12 @@ import {
   validateRequest,
 } from "https://deno.land/x/sift@0.4.0/mod.ts";
 
-import { Rcon, RconBadIpException } from "./rcon.ts";
+import {
+  Rcon,
+  BadIpException,
+  BadRconPasswordException,
+  RconConnectionClosedException,
+} from "./rcon.ts";
 
 import { RconRequestDto } from "./types.ts";
 
@@ -64,11 +69,33 @@ async function home(req: Request) {
       }
     );
   } catch (err) {
-    if (err instanceof RconBadIpException) {
+    if (err instanceof BadIpException) {
       return json(
         {
           statusCode: 400,
-          message: "Bad IP address",
+          message: err.message,
+          error: "Bad Request",
+        },
+        {
+          headers: getHeaders(),
+        }
+      );
+    } else if (err instanceof BadRconPasswordException) {
+      return json(
+        {
+          statusCode: 400,
+          message: err.message,
+          error: "Bad Request",
+        },
+        {
+          headers: getHeaders(),
+        }
+      );
+    } else if (err instanceof RconConnectionClosedException) {
+      return json(
+        {
+          statusCode: 400,
+          message: err.message,
           error: "Bad Request",
         },
         {
@@ -77,7 +104,8 @@ async function home(req: Request) {
       );
     }
 
-    console.log(err);
+    console.error(err);
+
     return json(
       {
         statusCode: 500,

@@ -10,10 +10,24 @@ const PacketType = {
   RESPONSE_AUTH: 0x02,
 };
 
-export class RconBadIpException extends Error {
+export class BadIpException extends Error {
   constructor() {
     super();
     this.message = "Failed to resolve IP";
+  }
+}
+
+export class BadRconPasswordException extends Error {
+  constructor() {
+    super();
+    this.message = "Provided RCON password is incorrect";
+  }
+}
+
+export class RconConnectionClosedException extends Error {
+  constructor() {
+    super();
+    this.message = "RCON server connection closed unexpectedly";
   }
 }
 
@@ -79,13 +93,13 @@ export class Rcon {
       );
     } catch (err) {
       if (err instanceof Deno.errors.ConnectionRefused) {
-        throw new RconBadIpException();
+        throw new BadIpException();
       } else if (err instanceof Error) {
         if (
           err.message ===
           "failed to lookup address information: Name or service not known"
         ) {
-          throw new RconBadIpException();
+          throw new BadIpException();
         }
       }
 
@@ -102,10 +116,10 @@ export class Rcon {
     } finally {
       if (this.conn === conn) {
         this.conn = undefined;
-        this.authed?.reject(new Error("connection closed"));
+        this.authed?.reject(new RconConnectionClosedException());
         this.authed = undefined;
         this.requests.forEach((request) =>
-          request.reject(new Error("connection closed"))
+          request.reject(new RconConnectionClosedException())
         );
         this.requests.clear();
       }
@@ -154,8 +168,7 @@ export class Rcon {
             }
           }
         } else if (id == -1) {
-          console.error("Authentication failed");
-          this.authed?.reject(new Error("authentication"));
+          this.authed?.reject(new BadRconPasswordException());
         }
 
         data = data.slice(4 + len);
