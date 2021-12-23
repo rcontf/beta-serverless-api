@@ -84,7 +84,7 @@ export class Rcon {
       });
 
       // Don't await.
-      void this.read();
+      void this.read().catch();
 
       await this.sendData(
         new Uint8Array([0, 0, 0, 0]),
@@ -92,16 +92,14 @@ export class Rcon {
         PacketType.AUTH
       );
     } catch (err) {
-      if (err instanceof Deno.errors.ConnectionRefused) {
+      if (
+        err instanceof Deno.errors.ConnectionRefused ||
+        err instanceof Deno.errors.ConnectionReset
+      ) {
         throw new BadIpException();
-      } else if (err instanceof Error) {
-        if (
-          err.message ===
-          "failed to lookup address information: Name or service not known"
-        ) {
-          throw new BadIpException();
-        }
       }
+
+      console.warn(err);
 
       throw err;
     }
