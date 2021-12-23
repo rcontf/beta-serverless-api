@@ -10,6 +10,13 @@ const PacketType = {
   RESPONSE_AUTH: 0x02,
 };
 
+export class RconBadIpException extends Error {
+  constructor() {
+    super();
+    this.message = "Failed to resolve IP";
+  }
+}
+
 class Request {
   public data = new Uint8Array();
 
@@ -50,7 +57,11 @@ export class Rcon {
   }
 
   private async connect() {
-    if (!this.conn) {
+    if (this.conn) {
+      return this.authed?.promise;
+    }
+
+    try {
       this.authed = new ResolvablePromise();
 
       this.conn = await Deno.connect({
@@ -66,8 +77,20 @@ export class Rcon {
         this.password,
         PacketType.AUTH
       );
+    } catch (err) {
+      if (err instanceof Deno.errors.ConnectionRefused) {
+        throw new RconBadIpException();
+      } else if (err instanceof Error) {
+        if (
+          err.message ===
+          "failed to lookup address information: Name or service not known"
+        ) {
+          throw new RconBadIpException();
+        }
+      }
+
+      throw err;
     }
-    return this.authed?.promise;
   }
 
   private async read() {
