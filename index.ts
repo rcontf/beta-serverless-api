@@ -4,12 +4,7 @@ import {
   validateRequest,
 } from "https://deno.land/x/sift@0.4.0/mod.ts";
 
-import {
-  Rcon,
-  BadIpException,
-  BadRconPasswordException,
-  RconConnectionClosedException,
-} from "./rcon.ts";
+import { Rcon } from "./rcon.ts";
 
 import { RconRequestDto } from "./types.ts";
 
@@ -28,14 +23,11 @@ serve({
 });
 
 function notFound() {
-  return new Response(
-    JSON.stringify({
-      statusCode: 404,
-      message: "Not found",
-      error: "Not Found",
-    }),
-    { status: 404 }
-  );
+  return json({
+    statusCode: 404,
+    message: "Not found",
+    error: "Not Found",
+  });
 }
 
 async function home(req: Request) {
@@ -68,49 +60,13 @@ async function home(req: Request) {
         headers: getHeaders(),
       }
     );
-  } catch (err) {
-    if (err instanceof BadIpException) {
-      return json(
-        {
-          statusCode: 400,
-          message: err.message,
-          error: "Bad Request",
-        },
-        {
-          headers: getHeaders(),
-        }
-      );
-    } else if (err instanceof BadRconPasswordException) {
-      return json(
-        {
-          statusCode: 400,
-          message: err.message,
-          error: "Bad Request",
-        },
-        {
-          headers: getHeaders(),
-        }
-      );
-    } else if (err instanceof RconConnectionClosedException) {
-      return json(
-        {
-          statusCode: 400,
-          message: err.message,
-          error: "Bad Request",
-        },
-        {
-          headers: getHeaders(),
-        }
-      );
-    }
-
-    console.error(err);
-
+  } catch (_err) {
+    console.log(_err);
     return json(
       {
-        statusCode: 500,
-        message: "Unexpected error occured",
-        error: "Internal Server Error",
+        statusCode: 400,
+        message: "Bad RCON details",
+        error: "Bad Request",
       },
       {
         headers: getHeaders(),

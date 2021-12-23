@@ -10,27 +10,6 @@ const PacketType = {
   RESPONSE_AUTH: 0x02,
 };
 
-export class BadIpException extends Error {
-  constructor() {
-    super();
-    this.message = "Failed to resolve IP";
-  }
-}
-
-export class BadRconPasswordException extends Error {
-  constructor() {
-    super();
-    this.message = "Provided RCON password is incorrect";
-  }
-}
-
-export class RconConnectionClosedException extends Error {
-  constructor() {
-    super();
-    this.message = "RCON server connection closed unexpectedly";
-  }
-}
-
 class Request {
   public data = new Uint8Array();
 
@@ -71,11 +50,7 @@ export class Rcon {
   }
 
   private async connect() {
-    if (this.conn) {
-      return this.authed?.promise;
-    }
-
-    try {
+    if (!this.conn) {
       this.authed = new ResolvablePromise();
 
       this.conn = await Deno.connect({
@@ -84,25 +59,15 @@ export class Rcon {
       });
 
       // Don't await.
-      void this.read().catch();
+      void this.read();
 
       await this.sendData(
         new Uint8Array([0, 0, 0, 0]),
         this.password,
         PacketType.AUTH
       );
-    } catch (err) {
-      if (
-        err instanceof Deno.errors.ConnectionRefused ||
-        err instanceof Deno.errors.ConnectionReset
-      ) {
-        throw new BadIpException();
-      }
-
-      console.warn(err);
-
-      throw err;
     }
+    return this.authed?.promise;
   }
 
   private async read() {
@@ -114,10 +79,10 @@ export class Rcon {
     } finally {
       if (this.conn === conn) {
         this.conn = undefined;
-        this.authed?.reject(new RconConnectionClosedException());
+        this.authed?.reject(new Error("connection closed"));
         this.authed = undefined;
         this.requests.forEach((request) =>
-          request.reject(new RconConnectionClosedException())
+          request.reject(new Error("connection closed"))
         );
         this.requests.clear();
       }
@@ -166,7 +131,8 @@ export class Rcon {
             }
           }
         } else if (id == -1) {
-          this.authed?.reject(new BadRconPasswordException());
+          console.error("Authentication failed");
+          this.authed?.reject(new Error("authentication"));
         }
 
         data = data.slice(4 + len);
