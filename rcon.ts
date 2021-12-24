@@ -50,23 +50,25 @@ export class Rcon {
   }
 
   private async connect() {
-    if (!this.conn) {
-      this.authed = new ResolvablePromise();
-
-      this.conn = await Deno.connect({
-        hostname: this.host,
-        port: this.port,
-      });
-
-      // Don't await.
-      void this.read();
-
-      await this.sendData(
-        new Uint8Array([0, 0, 0, 0]),
-        this.password,
-        PacketType.AUTH
-      );
+    if (this.conn) {
+      return this.authed?.promise;
     }
+
+    this.authed = new ResolvablePromise();
+
+    this.conn = await Deno.connect({
+      hostname: this.host,
+      port: this.port,
+    });
+
+    // Don't await.
+    void this.read();
+
+    await this.sendData(
+      new Uint8Array([0, 0, 0, 0]),
+      this.password,
+      PacketType.AUTH
+    );
     return this.authed?.promise;
   }
 
