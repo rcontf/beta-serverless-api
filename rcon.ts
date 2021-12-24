@@ -10,6 +10,13 @@ const PacketType = {
   RESPONSE_AUTH: 0x02,
 };
 
+export class RconConnectionException extends Error {
+  constructor() {
+    super();
+    this.message = "Couldn't connect to server";
+  }
+}
+
 class Request {
   public data = new Uint8Array();
 
@@ -56,10 +63,23 @@ export class Rcon {
 
     this.authed = new ResolvablePromise();
 
-    this.conn = await Deno.connect({
-      hostname: this.host,
-      port: this.port,
-    });
+    try {
+      this.conn = await Deno.connect({
+        hostname: this.host,
+        port: this.port,
+      });
+    } catch (err) {
+      if (
+        err instanceof Deno.errors.ConnectionAborted ||
+        err instanceof Deno.errors.ConnectionRefused ||
+        (err instanceof Error &&
+          err.message === "No such host is known. (os error 11001)")
+      ) {
+        throw new RconConnectionException();
+      }
+
+      throw err;
+    }
 
     // Don't await.
     void this.read();
@@ -69,7 +89,8 @@ export class Rcon {
       this.password,
       PacketType.AUTH
     );
-    return this.authed?.promise;
+
+    return this.conn;
   }
 
   private async read() {

@@ -4,7 +4,7 @@ import {
   validateRequest,
 } from "https://deno.land/x/sift@0.4.0/mod.ts";
 
-import { Rcon } from "./rcon.ts";
+import { Rcon, RconConnectionException } from "./rcon.ts";
 
 import { RconRequestDto } from "./types.ts";
 
@@ -60,8 +60,22 @@ async function home(req: Request) {
         headers: getHeaders(),
       }
     );
-  } catch (_err) {
-    console.error(_err);
+  } catch (err) {
+    if (err instanceof RconConnectionException) {
+      return json(
+        {
+          statusCode: 400,
+          message: "Bad target IP",
+          error: "Bad Request",
+        },
+        {
+          headers: getHeaders(),
+        }
+      );
+    }
+
+    // actually something wrong internally
+    console.error(err);
     return json(
       {
         statusCode: 400,
