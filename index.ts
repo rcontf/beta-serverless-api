@@ -61,7 +61,7 @@ async function home(req: Request) {
       }
     );
   } catch (_err) {
-    console.log(_err);
+    console.error(_err);
     return json(
       {
         statusCode: 400,
